@@ -20,7 +20,10 @@ async function establishConnection() {
     // clearing existing records in the collection
       .then(async () => {
         var collection = mongoose.connection.useDb(config.db.database).collection(config.db.collection);
+        await collection.countDocuments().then(value => console.log(`\n${value} documents in the collection before purge.\n`));
+        console.log('Purging all records...\n');
         await collection.deleteMany({});
+        await collection.countDocuments().then(value => console.log(`${value} documents in the collection after purge.\n`));
       // handling error during connection attempt
       }).catch(() => {
         console.error(error);
@@ -49,14 +52,29 @@ fs.readFile(config.document.uri, config.document.encoding, async function(err, d
   data = JSON.parse(data);
   // connecting to the MongoDB
   await establishConnection();
+
+  // forEach can't be asynchronized and left for demo purposes only, using for loop instead.
+  // data.entries.forEach(listing => {
+  //   // and write them using custom Schema
+  //   new Listing(listing).save(function(err, listing) {
+  //     // handle error during writing document
+  //     if (err) console.error(err);
+  //   });
+  // });
+
   // when connected - iterate through all entries
-  data.entries.forEach(listing => {
-    // and write them using custom Schema
-    new Listing(listing).save(function(err, listing) {
-      // handle error during writing document
-      if (err) console.error(err);
-    });
-  });
+  for (var entry of data.entries) {
+    var listing = new Listing(entry);
+    await listing.save();
+  }
+  // get collection reference
+  var collection = mongoose.connection.useDb(config.db.database).collection(config.db.collection);
+  // check operation success
+  await collection.countDocuments().then(value => console.log(`${value} documents persisted.\n Correct number? ${value == data.entries.length}\n`));
+  // close connection
+  await mongoose.connection.close();
+  // exit
+  return;
 });
 
 
