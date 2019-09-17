@@ -24,6 +24,7 @@ async function establishConnection() {
         console.log('Purging all records...\n');
         await collection.deleteMany({});
         await collection.countDocuments().then(value => console.log(`${value} documents in the collection after purge.\n`));
+        console.log('Writing new documents...\n');
       // handling error during connection attempt
       }).catch(() => {
         console.error(error);
@@ -67,13 +68,16 @@ fs.readFile(config.document.uri, config.document.encoding, async function(err, d
     var listing = new Listing(entry);
     await listing.save();
   }
+  console.log('Done...\n');
   // get collection reference
   var collection = mongoose.connection.useDb(config.db.database).collection(config.db.collection);
   // check operation success
-  await collection.countDocuments().then(value => console.log(`${value} documents persisted.\n Correct number? ${value == data.entries.length}\n`));
+  await collection.countDocuments().then(value => console.log(`${value} documents persisted.\n${value == data.entries.length ? 'Success!' : 'Failure!'}\n`));
   // close connection
+  console.log('Closing connection...\n');
   await mongoose.connection.close();
   // exit
+  console.log('Goodbye!\n');
   return;
 });
 
